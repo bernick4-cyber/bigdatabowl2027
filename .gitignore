@@ -1,0 +1,6 @@
+*.csv
+*.zip
+slant_outputs/
+__pycache__/
+.venv/
+.streamlit/secrets.toml
