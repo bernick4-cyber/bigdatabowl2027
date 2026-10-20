@@ -1,25 +1,22 @@
-# NFL Combine Slant Explorer
+# NFL Combine Slant Explorer — bundled data
 
-A Streamlit starter app for inspecting WR combine slant paths and exploratory speed-through-turn measurements. No NFL prediction model is included yet.
+## Deploy
+1. Extract this ZIP.
+2. Upload app.py, nfl_slant_starter.py, requirements.txt, README.md, the complete data folder, and .streamlit/config.toml to your GitHub repository. Keep the data folder structure intact.
+3. In Streamlit Community Cloud select the repository, branch, and app.py, then deploy.
+4. Data loads automatically; nobody needs to upload CSVs in the app.
 
-## Deploy from GitHub to Streamlit
-1. Create a repository and upload the extracted project files. Keep `app.py`, `nfl_slant_starter.py`, and `requirements.txt` at the repository root, and retain `.streamlit/config.toml` in its folder.
-2. In Streamlit Community Cloud, create an app from the repository. Select your branch and set the main file to `app.py`.
-3. Deploy and open the app. Upload `players.csv` and `combine_tracking.csv` (or the copy with `(1)` in its name) in the sidebar.
-4. Choose a receiver and an attempt to inspect the route and speed chart. Download the selected measurements as CSV.
+Keep the repository and app access limited to your authorized competition team and follow Kaggle competition sharing terms. Source data is included in this package.
 
-Do not upload the ZIP itself as your project source: extract it first. If GitHub's upload picker hides dotfiles, create `.streamlit/config.toml` with GitHub's Add file > Create new file feature and paste its contents.
+## Included datasets
+players.csv, combine_results.csv, combine_tracking.csv, player_play.csv, and game_tracking_2023.csv.
+The explorer currently uses players and combine tracking only. Other bundled datasets are available for future analysis. games.csv, player_career_successes.csv, and game_tracking_2024/2025.csv were not supplied and are not included.
+
+Data files are gzip compressed and split into chunks under 20 MB for repository uploads. Do not extract, rename, or open individual parts; the app reassembles them. The complete data folder must be committed. Large browser uploads can take time; upload the data folder in batches if necessary.
 
 ## Local use
-```bash
 python -m pip install -r requirements.txt
 python -m streamlit run app.py
-```
 
-## Data and access
-Competition CSVs are not included. Each teammate obtains data through Kaggle under the competition terms. Confirm those terms permit the intended hosted processing and sharing before deployment. Configure app access for your team; a private GitHub repository alone does not establish private app access. Uploads are processed on the Streamlit host and may use substantial RAM; the 500 MB upload setting does not guarantee sufficient hosting memory. This app only needs combine tracking and players, not the much larger NFL game-tracking files.
-
-## Measurement limitations
-The candidate turn is the peak absolute heading-change rate after circular unwrapping and three-frame smoothing, restricted to speed >=3 yards/second and at least 0.3 seconds from either endpoint. Entry and exit speed are averages over adjacent 0.3-second windows. Visually review markers: peak turning can reflect another movement rather than the intended cut. This heuristic has not been validated, and no relationship with NFL separation has been established.
-
-`nfl_slant_starter.py` also supports batch plotting and CSV export; see its docstring for commands.
+## Limitations
+Candidate turn detection uses peak smoothed heading-change rate while moving >=3 yd/s with 0.3 seconds of tracking on each side. Entry/exit speeds average adjacent 0.3-second windows. Markers require visual validation. This is exploratory; there is no fitted NFL prediction model. Hosted memory requirements and the Streamlit UI have not been tested here. The loader currently reads only the two datasets required by the explorer.

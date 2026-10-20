@@ -15,19 +15,29 @@ st.info('Exploratory turn detection: red markers identify a candidate turn using
 def load_csv(raw):
     return pd.read_csv(io.BytesIO(raw))
 
+DATA_DIR = Path(__file__).resolve().parent / 'data'
+
+@st.cache_data(show_spinner=False)
+def bundled_csv(filename):
+    import gzip
+    import json
+    manifest = json.loads((DATA_DIR / 'manifest.json').read_text())
+    parts = manifest[filename]['parts']
+    compressed = b''.join((DATA_DIR / part).read_bytes() for part in parts)
+    return pd.read_csv(io.BytesIO(gzip.decompress(compressed)))
+
 with st.sidebar:
-    st.header('Load competition data')
-    st.caption('Files stay out of the GitHub repository. Upload your Kaggle downloads here.')
-    players_file = st.file_uploader('players.csv', type=['csv'], key='players')
-    tracking_file = st.file_uploader('combine_tracking.csv', type=['csv'], key='tracking')
-    st.caption('Tracking upload limit: 500 MB per file. Uploaded data is processed by the hosted app.')
-if not players_file or not tracking_file:
-    st.write('Upload both files in the sidebar to begin. The tracking filename may include “(1)”.')
-    st.stop()
+    st.header('Included competition data')
+    st.caption('Data loads automatically. No uploads needed.')
+    import json
+    manifest = json.loads((DATA_DIR / 'manifest.json').read_text())
+    for filename in manifest:
+        st.write(filename)
+    st.caption('This first explorer uses players and combine tracking. Other included datasets are reserved for subsequent analysis.')
 try:
-    with st.spinner('Reading CSV files…'):
-        players = load_csv(players_file.getvalue())
-        tracking = load_csv(tracking_file.getvalue())
+    with st.spinner('Loading included competition data…'):
+        players = bundled_csv('players.csv')
+        tracking = bundled_csv('combine_tracking.csv')
     for label, df, required in [
         ('players', players, {'nfl_id','display_name','nfl_position'}),
         ('tracking', tracking, {'nfl_id','event_id','entity_type','drill_name','time','x','y','s','dir'})]:
