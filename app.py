@@ -19,12 +19,8 @@ DATA_DIR = Path(__file__).resolve().parent / 'data'
 
 @st.cache_data(show_spinner=False)
 def bundled_csv(filename):
-    import gzip
-    import json
-    manifest = json.loads((DATA_DIR / 'manifest.json').read_text())
-    parts = manifest[filename]['parts']
-    compressed = b''.join((DATA_DIR / part).read_bytes() for part in parts)
-    return pd.read_csv(io.BytesIO(gzip.decompress(compressed)))
+    from data_access import read_data
+    return read_data(filename)
 
 with st.sidebar:
     st.header('Included competition data')
@@ -33,7 +29,12 @@ with st.sidebar:
     manifest = json.loads((DATA_DIR / 'manifest.json').read_text())
     for filename in manifest:
         st.write(filename)
-    st.caption('This first explorer uses players and combine tracking. Other included datasets are reserved for subsequent analysis.')
+    page = st.radio('Explore', ['Combine slants', 'Player profiles', 'NFL game tracking', 'Dataset inventory'])
+
+if page != 'Combine slants':
+    from extra_views import show
+    show(page)
+    st.stop()
 try:
     with st.spinner('Loading included competition data…'):
         players = bundled_csv('players.csv')
