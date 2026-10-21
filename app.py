@@ -23,9 +23,14 @@ def bundled_csv(filename):
 with st.sidebar:
     st.title('Prospect Lab')
     st.caption('From combine movement to NFL performance')
-    page = st.radio('Research tools', ['Combine slants', 'Player profiles', 'NFL game tracking', 'Data coverage'])
+    page = st.radio('Research tools', ['Research Lab', 'Combine slants', 'Player profiles', 'NFL game tracking', 'Data coverage'])
     st.divider()
     st.caption('NFL Big Data Bowl 2027')
+
+if page == 'Research Lab':
+    from research_lab import show as research
+    research()
+    st.stop()
 
 if page != 'Combine slants':
     from extra_views import show

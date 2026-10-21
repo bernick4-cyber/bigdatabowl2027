@@ -1,0 +1,23 @@
+RESEARCH LAB UPDATE
+
+Upload these two files to the top level of your existing GitHub repository:
+app.py — replace the existing file
+research_lab.py — add this new file
+
+Keep presentation.py, extra_views.py, data_access.py, nfl_slant_starter.py,
+requirements.txt and the complete data folder already in your repository.
+No additional dependencies or data uploads are required.
+Commit changes, then open Research Lab in the app sidebar.
+
+Research tools:
+- Same-position player comparison and percentiles.
+- Combine versus rookie NFL outcome scatterplots and Pearson/rank correlations.
+- Similar prospects using standardized combine measurements.
+
+Comparisons use selected draft classes and the supplied prospect sample only.
+NFL outcomes use regular-season rookie-year records; nullified plays are excluded.
+Missing tests/outcomes stay missing. Similar prospects require complete selected tests.
+Movement-derived combine metrics and held-out predictive validation are not included yet.
+
+Validation: syntax checks, actual 510-player data join, and focused checks of rookie-year,
+playoff/penalty exclusions and unknown-outcome handling. Hosted UI not verified here.
