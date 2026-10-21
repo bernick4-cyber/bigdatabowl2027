@@ -1,0 +1,30 @@
+MODEL LAB — TEAM UPDATE
+
+Upload all four Python files from this ZIP to your GitHub repository's top level:
+app.py — replace
+research_lab.py — replace (retains rankings, percentiles, explanations and select all)
+nfl_success.py — replace or add (career and season views)
+model_lab.py — new
+
+Keep every existing data file, presentation.py, extra_views.py, data_access.py,
+nfl_slant_starter.py and requirements.txt. No new dependencies or data uploads.
+Commit changes and open Model Lab in the sidebar.
+
+Start with DT, all draft classes, get-off time, minimum 20 observations,
+weight as baseline and vertical jump as the additional variable.
+
+Variable relationships: signed correlation matrix and ranked pairs.
+Prediction error: mean-only benchmark, baseline, baseline plus each added variable,
+and all selected variables. Models use the same complete sample and leave each
+player out when predicting that player's outcome. MAE and RMSE use original units.
+Explore a sweet spot: range sliders show matching players and actual outcome means.
+Ranges are descriptive, not optimized or independently validated.
+
+Missing values are not imputed. Constant or collinear models are skipped with an
+explanation. Minimum model sample is 8 players and at least predictors+4.
+Exploration and repeated filtering can overfit. Reserve an independent cohort
+before claiming predictive performance. This update does not automatically find
+an optimal threshold or save shared team notes.
+
+Validation: syntax checked; numeric MAEs reproduce the 29-DT analysis; invalid
+constant-input models are rejected. Hosted rendering has not been verified here.
