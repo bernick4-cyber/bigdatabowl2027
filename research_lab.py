@@ -40,6 +40,65 @@ def assemble(players,combine,plays,games):
 def load():
     return assemble(*[read_data(n) for n in ['players.csv','combine_results.csv','player_play.csv','games.csv']])
 
+def rank_correlations(data, minimum_players=20, minimum_observations=20):
+    rows=[]
+    for position,group in data.groupby('nfl_position'):
+        for test in TESTS:
+            for outcome in OUTCOMES:
+                threshold=minimum_observations if outcome in {'separation','yac','getoff'} else 1
+                eligible=group[group[outcome+'_n'].ge(threshold)&group[outcome].notna()]
+                pairs=eligible.dropna(subset=[test,outcome])
+                if len(pairs)<minimum_players or pairs[test].nunique()<2 or pairs[outcome].nunique()<2:
+                    continue
+                x=pairs[test].astype(float);y=pairs[outcome].astype(float)
+                linear=float(x.corr(y));rank=float(x.rank().corr(y.rank()))
+                if not np.isfinite(linear) or not np.isfinite(rank):continue
+                rows.append({'position':position,'test':test,'outcome':outcome,'players':len(pairs),
+                             'linear':linear,'rank':rank,'missing_tests':int(eligible[test].isna().sum()),
+                             'threshold':threshold})
+    return pd.DataFrame(rows)
+
+
+def strongest_view(data):
+    st.subheader('Strongest correlations')
+    st.write('Rank the largest relationships within each position, then inspect the players behind each result.')
+    a,b=st.columns(2)
+    positions=a.multiselect('Positions to search',sorted(data.nfl_position.dropna().unique()),default=sorted(data.nfl_position.dropna().unique()))
+    years=b.multiselect('Draft classes to search',sorted(data.draft_year.unique()),default=sorted(data.draft_year.unique()))
+    a,b,c=st.columns(3)
+    minimum=int(a.number_input('Minimum players per comparison',min_value=5,max_value=200,value=20))
+    observations=int(b.number_input('Minimum observations for average outcomes',min_value=1,max_value=2000,value=20,help='Applies to separation, yards after catch, and get-off time. Totals and recorded playing-time counts require at least one observation.'))
+    ordering=c.selectbox('Rank by',['Linear correlation','Rank correlation'])
+    filtered=data[data.nfl_position.isin(positions)&data.draft_year.isin(years)]
+    with st.spinner('Comparing measurements and rookie outcomes…'):
+        scores=rank_correlations(filtered,minimum,observations)
+    if scores.empty:
+        st.info('No comparisons meet these filters. Select more positions or classes, or reduce the minimum sample size.');return
+    key='linear' if ordering=='Linear correlation' else 'rank'
+    scores=scores.assign(strength=scores[key].abs()).sort_values(['strength','players'],ascending=[False,False]).reset_index(drop=True)
+    st.metric('Eligible comparisons searched',len(scores))
+    st.caption('Sorted by absolute correlation: both negative and positive relationships can be strong. Every comparison is within one position. Click table headings to sort; select a relationship below to inspect it.')
+    visible=pd.DataFrame({'Position':scores.position,'Combine measurement':scores.test.map(lambda n:LABELS.get(n,n)),
+        'Rookie NFL outcome':scores.outcome.map(lambda n:OUTCOMES[n][0]),'Players':scores.players,
+        'Linear correlation':scores.linear.round(3),'Rank correlation':scores['rank'].round(3),
+        'Missing combine tests':scores.missing_tests})
+    st.dataframe(visible,hide_index=True,use_container_width=True)
+    st.warning('These rankings search many combinations and can highlight chance findings. They are not adjusted for multiple comparisons, validated predictions, or evidence of causation. Small samples and missing combine tests can change the rankings.')
+    selected=st.selectbox('Inspect a relationship',list(scores.index),format_func=lambda i:f"{scores.loc[i,'position']} · {LABELS.get(scores.loc[i,'test'],scores.loc[i,'test'])} → {OUTCOMES[scores.loc[i,'outcome']][0]}")
+    row=scores.loc[selected];test=row['test'];outcome=row['outcome']
+    group=filtered[filtered.nfl_position.eq(row.position)]
+    pairs=group[group[outcome+'_n'].ge(row.threshold)].dropna(subset=[test,outcome])
+    c1,c2,c3=st.columns(3);c1.metric('Players',len(pairs));c2.metric('Linear correlation',f'{row.linear:+.3f}');c3.metric('Rank correlation',f'{row["rank"]:+.3f}')
+    direction='higher' if row.linear>0 else 'lower'
+    st.write(f'Higher values of {LABELS.get(test,test).lower()} are associated with {direction} values of {OUTCOMES[outcome][0].lower()} in this sample.')
+    st.caption('For timed drills and get-off time, a lower value means faster. A relationship with size is not automatically a relationship with better performance.')
+    fig,ax=plt.subplots(figsize=(10,5));ax.scatter(pairs[test].astype(float),pairs[outcome].astype(float),color='#147d92',alpha=.75)
+    ax.set(xlabel=LABELS.get(test,test),ylabel=OUTCOMES[outcome][0]);ax.spines[['top','right']].set_visible(False);fig.tight_layout();st.pyplot(fig);plt.close(fig)
+    details=pairs[['display_name','draft_year',test,outcome,outcome+'_n']].rename(columns={outcome:OUTCOMES[outcome][0],outcome+'_n':'Recorded observations'})
+    st.dataframe(friendly(details).round(2),hide_index=True,use_container_width=True)
+    st.caption('Each dot is one player with equal weight. Rookie regular season only; nullified plays excluded. Missing outcomes stay unknown. Recorded appearances and yardage totals measure opportunity as well as performance. Non-missing observation counts do not automatically identify routes, catches, or pass-rush attempts. Confirm field applicability for each position.')
+
+
 def show():
     st.title('Research Lab')
     st.write('Compare athletic profiles and explore how combine testing relates to rookie NFL performance.')
@@ -47,13 +106,16 @@ def show():
     if not needed.issubset(manifest()):
         st.info('Player information, combine results, game schedule, and play performance are required. Check Data coverage.');return
     with st.spinner('Preparing rookie-season comparisons…'):data=load()
+    mode=st.radio('Research tool',['Strongest correlations','Player comparison','Combine vs. performance','Similar prospects'],horizontal=True)
+    if mode=='Strongest correlations':
+        strongest_view(data)
+        return
     a,b=st.columns(2)
     pos=a.selectbox('Position',sorted(data.nfl_position.dropna().unique()),index=list(sorted(data.nfl_position.dropna().unique())).index('WR'))
     years=b.multiselect('Draft classes',sorted(data.draft_year.unique()),default=sorted(data.draft_year.unique()))
     pool=data[data.nfl_position.eq(pos)&data.draft_year.isin(years)].copy()
     if pool.empty:st.info('Select at least one draft class.');return
     st.caption(f'{len(pool)} prospects · Same-position comparisons · Regular-season rookie year only')
-    mode=st.radio('Research tool',['Player comparison','Combine vs. performance','Similar prospects'],horizontal=True)
     st.info('Exploratory research: relationships do not prove causation or predictive value. Players without recorded rookie plays have unknown outcomes here, not zero performance. Missing combine tests are not imputed.')
     names=pool.set_index('nfl_id').display_name.to_dict();ids=sorted(names,key=lambda n:names[n])
     if mode=='Player comparison':
