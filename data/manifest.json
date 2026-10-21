@@ -1,0 +1,37 @@
+{
+  "combine_tracking.csv": {
+    "parts": [
+      "combine_tracking.csv.gz.part000"
+    ],
+    "original_bytes": 83788174
+  },
+  "player_play.csv": {
+    "parts": [
+      "player_play.csv.gz.part000",
+      "player_play.csv.gz.part001",
+      "player_play.csv.gz.part002"
+    ],
+    "original_bytes": 146879042
+  },
+  "combine_results.csv": {
+    "parts": [
+      "combine_results.csv.gz.part000"
+    ],
+    "original_bytes": 41020
+  },
+  "players.csv": {
+    "parts": [
+      "players.csv.gz.part000"
+    ],
+    "original_bytes": 47301
+  },
+  "game_tracking_2023.csv": {
+    "parts": [
+      "game_tracking_2023.csv.gz.part000",
+      "game_tracking_2023.csv.gz.part001",
+      "game_tracking_2023.csv.gz.part002",
+      "game_tracking_2023.csv.gz.part003"
+    ],
+    "original_bytes": 335463637
+  }
+}
