@@ -6,11 +6,9 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from nfl_slant_starter import inspect_attempt
 
-st.set_page_config(page_title='NFL Combine Slant Explorer', layout='wide')
-st.title('NFL Combine Slant Explorer')
-st.write('Inspect receiver movement in combine slants before testing its relationship with NFL separation.')
-st.info('Exploratory turn detection: red markers identify a candidate turn using direction changes. These measurements have not been validated or shown to predict NFL performance.')
-
+st.set_page_config(page_title='NFL Prospect Lab', page_icon='🏈', layout='wide')
+from presentation import banner, detail_table
+banner()
 @st.cache_data(show_spinner=False)
 def load_csv(raw):
     return pd.read_csv(io.BytesIO(raw))
@@ -23,18 +21,18 @@ def bundled_csv(filename):
     return read_data(filename)
 
 with st.sidebar:
-    st.header('Included competition data')
-    st.caption('Data loads automatically. No uploads needed.')
-    import json
-    manifest = json.loads((DATA_DIR / 'manifest.json').read_text())
-    for filename in manifest:
-        st.write(filename)
-    page = st.radio('Explore', ['Combine slants', 'Player profiles', 'NFL game tracking', 'Dataset inventory'])
+    st.title('Prospect Lab')
+    st.caption('From combine movement to NFL performance')
+    page = st.radio('Research tools', ['Combine slants', 'Player profiles', 'NFL game tracking', 'Data coverage'])
+    st.divider()
+    st.caption('NFL Big Data Bowl 2027')
 
 if page != 'Combine slants':
     from extra_views import show
     show(page)
     st.stop()
+st.title('Combine route explorer')
+st.write('See how a receiver moves through a slant and compare their speed before and after the estimated turn.')
 try:
     with st.spinner('Loading included competition data…'):
         players = bundled_csv('players.csv')
@@ -58,9 +56,10 @@ try:
     left, right = st.columns(2)
     left.metric('Receivers with slant tracking', data.nfl_id.nunique())
     right.metric('Drill attempts', data[['event_id','nfl_id']].drop_duplicates().shape[0])
-    player = st.selectbox('Receiver', sorted(data.nfl_id.unique(), key=lambda n: str(names[n])), format_func=lambda n: f'{names[n]} ({int(n)})')
+    player = st.selectbox('Receiver', sorted(data.nfl_id.unique(), key=lambda n: str(names[n])), format_func=lambda n: names[n])
     subset = data[data.nfl_id.eq(player)]
-    event = st.selectbox('Drill attempt (event ID)', subset.event_id.unique())
+    attempts = list(subset.event_id.unique())
+    event = st.selectbox('Attempt', attempts, format_func=lambda n: f'Attempt {attempts.index(n)+1}')
     g, i, metrics = inspect_attempt(subset[subset.event_id.eq(event)])
     if metrics is None:
         st.warning('This attempt does not have enough usable moving frames for the candidate turn measurement.'); st.stop()
@@ -69,22 +68,22 @@ try:
     fig, axs = plt.subplots(1, 2, figsize=(12, 5))
     x, y = g.x-g.x.iloc[0], g.y-g.y.iloc[0]
     axs[0].plot(x,y,'-o',markersize=3)
-    axs[0].scatter(x.iloc[i],y.iloc[i],c='red',label='Candidate turn',zorder=3)
-    axs[0].set(xlabel='x displacement (yards)',ylabel='y displacement (yards)',title='Route path')
+    axs[0].scatter(x.iloc[i],y.iloc[i],c='red',label='Estimated turn',zorder=3)
+    axs[0].set(xlabel='Lengthwise movement (yards)',ylabel='Sideways movement (yards)',title='Route path')
     axs[0].set_aspect('equal'); axs[0].legend()
     axs[1].plot(seconds,g.s)
-    axs[1].axvline(seconds.iloc[i],color='red',label='Candidate turn')
+    axs[1].axvline(seconds.iloc[i],color='red',label='Estimated turn')
     axs[1].set(xlabel='Time since first frame (seconds)',ylabel='Speed (yards/second)',title='Speed over time'); axs[1].legend()
     fig.tight_layout(); st.pyplot(fig); plt.close(fig)
     st.caption('Coordinates are relative to the first frame. Routes are not rotated or aligned across players.')
     c1,c2,c3 = st.columns(3)
-    c1.metric('Entry speed',f'{metrics["entry_speed_yd_s"]:.2f} yd/s')
-    c2.metric('Exit speed',f'{metrics["exit_speed_yd_s"]:.2f} yd/s')
-    c3.metric('Exit / entry speed',f'{metrics["exit_entry_speed_ratio"]:.2f}')
-    st.caption('Entry and exit use the 0.3-second windows before and after the candidate turn. A ratio above 1 means the player accelerated across these windows; it is not proof of better route running.')
-    result = pd.DataFrame([dict(nfl_id=int(player),display_name=names[player],event_id=event,**metrics)])
-    st.download_button('Download selected attempt measurements',result.to_csv(index=False),'slant_attempt_metrics.csv','text/csv')
-    with st.expander('View tracking frames'):
-        st.dataframe(g,hide_index=True)
+    c1.metric('Speed before turn',f'{metrics["entry_speed_yd_s"]:.2f} yd/s')
+    c2.metric('Speed after turn',f'{metrics["exit_speed_yd_s"]:.2f} yd/s')
+    c3.metric('Speed change through turn',f'{(metrics["exit_entry_speed_ratio"]-1)*100:+.1f}%')
+    st.caption('The turn marker is an estimate. Review the route before interpreting the speed change.')
+    with st.expander('How to read these measurements'):
+        st.write('Before and after speeds are averages over 0.3 seconds on each side of the estimated turn. A positive percentage means the player sped up. The turn marker is an automated estimate that needs visual review. These measurements have not yet been shown to predict NFL performance.')
+    with st.expander('Movement details'):
+        detail_table(g)
 except (ValueError, KeyError, pd.errors.ParserError) as exc:
     st.error(f'Could not process these files: {exc}')

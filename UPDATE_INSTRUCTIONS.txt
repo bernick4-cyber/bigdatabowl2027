@@ -1,0 +1,24 @@
+PROSPECT LAB — DISPLAY UPDATE
+
+Upload these three files to the TOP LEVEL of your existing GitHub repository:
+  app.py (replace)
+  extra_views.py (replace)
+  presentation.py (new)
+
+Commit the changes. Streamlit will reload the app.
+Keep all existing data files, data_access.py, nfl_slant_starter.py, and requirements.txt.
+There is no need to upload the data again. No additional packages are required.
+
+Changes:
+- Player names instead of internal NFL player IDs.
+- Attempts and matchups use readable labels instead of raw event/game IDs.
+- Plain-language measurement headings with units.
+- Profile tabs: Background, Combine results, Career summary.
+- Green field visualization for NFL movement with start/end markers.
+- Main navigation no longer lists CSV filenames.
+- Data coverage shows research-source names and readiness.
+- CSV download controls removed from the user interface.
+- Underlying IDs and CSV data remain intact for reliable joins.
+
+Validation: Python syntax checked; display transformation checked for name retention,
+ID removal and measurement labels. Hosted visual behavior has not been verified here.
