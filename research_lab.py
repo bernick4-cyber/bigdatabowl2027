@@ -98,7 +98,12 @@ def show():
         spread=pool[metrics].std(ddof=0);usable=[m for m in metrics if pd.notna(spread[m]) and spread[m]>0]
         if not usable:st.info('These measurements have no usable variation.');return
         if len(usable)<len(metrics):st.caption('Measurements without variation were excluded.')
-        candidates['Profile distance']=np.sqrt((((candidates[usable]-target[usable])/spread[usable])**2).mean(axis=1))
+        # A mixed-type player row is an object Series even after selecting
+        # numeric fields. Convert explicitly before NumPy arithmetic.
+        candidate_values=candidates[usable].apply(pd.to_numeric,errors='raise').to_numpy(dtype=float)
+        target_values=pd.to_numeric(target[usable],errors='raise').to_numpy(dtype=float)
+        scales=spread[usable].to_numpy(dtype=float)
+        candidates['Profile distance']=np.sqrt(np.mean(((candidate_values-target_values)/scales)**2,axis=1))
         nearest=candidates[candidates.nfl_id.ne(player)].nsmallest(10,'Profile distance')
         if nearest.empty:st.info('No other players have all selected measurements.');return
         outcome=st.selectbox('Show rookie outcome',list(OUTCOMES),format_func=lambda n:OUTCOMES[n][0])
