@@ -1,0 +1,32 @@
+NFL SUCCESS AND TEAM EXPLANATIONS UPDATE
+
+Replace these files at your GitHub repository's top level:
+- app.py
+- research_lab.py
+Add this new file at the same level:
+- nfl_success.py
+
+Keep all existing data and helper files. No requirements changes or repeat data uploads.
+Commit changes and choose NFL Success in the sidebar.
+
+Includes career overview, rookie/all recorded season filters, regular-season/playoff
+filters, season opportunity and performance tables, trend charts, same-position and
+draft-class career comparisons, metric definitions and research discussion prompts.
+Research Lab includes a plain-language correlation guide and preserves rankings
+and the corrected similar-prospect numeric calculation.
+
+Career source snapshot cutoff is unknown. Season performance uses supplied player-play
+records and excludes nullified plays; it is not reconciled with official career totals.
+No causal or validated prediction claims. Discussion prompts are not a shared notes store.
+
+Validation: syntax checks and actual-data season aggregation/career-key checks.
+Hosted rendering has not been verified here.
+
+Select all controls: compare every player in the active position/class filters.
+Research Lab player comparison also supports selecting all combine measurements.
+
+NEW: Research Lab > Percentiles vs. draft pick
+Choose combine or rookie NFL performance percentiles, then compare with actual overall pick.
+Includes select all, missing-data counts, reference-group size, drafted-player scatterplot,
+and an undrafted-inclusive table. Player comparison also shows draft round and pick.
+Percentiles remain relative to the active position and draft-class filters, not the chosen display subset.

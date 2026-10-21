@@ -102,11 +102,24 @@ def strongest_view(data):
 def show():
     st.title('Research Lab')
     st.write('Compare athletic profiles and explore how combine testing relates to rookie NFL performance.')
+    with st.expander('Start here: linear and rank correlations explained'):
+        st.markdown('''**Linear correlation** asks whether two measurements follow a straight-line pattern. It uses the actual numeric gaps, so extreme players can have a large effect.
+
+**Rank correlation** asks whether the ordering of players is consistent. It correlates their ranks, giving less influence to the size of extreme values. It can capture a steadily increasing or decreasing pattern that is not a straight line.
+
+Both range from **−1 to +1**. Near +1 means larger values tend to go with larger values; near −1 means larger values tend to go with smaller values. Near zero means little relationship of that type, but does not rule out all patterns.
+
+**Negative is not necessarily bad.** Higher jumps associated with lower get-off times produce a negative correlation: lower time means faster movement. A positive relationship between two timed tests can also mean faster players perform faster on both.
+
+A correlation of −0.71 does **not** mean a 71% success rate or 71% of NFL success explained. Similar linear and rank values lend consistency to an exploratory pattern; different values are a reason to inspect outliers or curvature.
+
+**What to do next:** check the chart, sample size, missing measurements and position-specific context. Search rankings are not corrected for trying many combinations. Keep exploratory findings separate from a hypothesis tested on held-out players. Rookie correlations use regular-season rookie performance; visit **NFL Success** for subsequent seasons and career context.''')
+
     needed={'players.csv','combine_results.csv','player_play.csv','games.csv'}
     if not needed.issubset(manifest()):
         st.info('Player information, combine results, game schedule, and play performance are required. Check Data coverage.');return
     with st.spinner('Preparing rookie-season comparisons…'):data=load()
-    mode=st.radio('Research tool',['Strongest correlations','Player comparison','Combine vs. performance','Similar prospects'],horizontal=True)
+    mode=st.radio('Research tool',['Strongest correlations','Player comparison','Percentiles vs. draft pick','Combine vs. performance','Similar prospects'],horizontal=True)
     if mode=='Strongest correlations':
         strongest_view(data)
         return
@@ -119,18 +132,55 @@ def show():
     st.info('Exploratory research: relationships do not prove causation or predictive value. Players without recorded rookie plays have unknown outcomes here, not zero performance. Missing combine tests are not imputed.')
     names=pool.set_index('nfl_id').display_name.to_dict();ids=sorted(names,key=lambda n:names[n])
     if mode=='Player comparison':
-        selected=st.multiselect('Compare players',ids,default=ids[:min(3,len(ids))],format_func=lambda n:names[n])
-        measurements=st.multiselect('Measurements',TESTS,default=['forty','ten_yd_split','vertical','broad_jump'],format_func=lambda n:LABELS.get(n,n))
+        all_players=st.checkbox('Select all players',key='research_all_players')
+        selected=ids if all_players else st.multiselect('Compare players',ids,default=ids[:min(3,len(ids))],format_func=lambda n:names[n])
+        all_measurements=st.checkbox('Select all measurements',key='research_all_measurements')
+        measurements=TESTS if all_measurements else st.multiselect('Measurements',TESTS,default=['forty','ten_yd_split','vertical','broad_jump'],format_func=lambda n:LABELS.get(n,n))
+        st.caption(f'{len(selected)} players selected in the current position and draft-class filters.')
         if not selected or not measurements:return
-        st.dataframe(friendly(pool[pool.nfl_id.isin(selected)][['display_name','draft_year']+measurements]).round(2),hide_index=True,use_container_width=True)
+        st.dataframe(friendly(pool[pool.nfl_id.isin(selected)][['display_name','draft_year','draft_round','draft_overall_pick']+measurements]).round(2),hide_index=True,use_container_width=True)
         rows=[]
         for metric in measurements:
             ranks=pool[metric].rank(pct=True,ascending=metric not in LOWER)*100
             for idx,row in pool[pool.nfl_id.isin(selected)].iterrows():
-                rows.append({'Player':row.display_name,'Measurement':LABELS.get(metric,metric),'Position percentile':ranks.loc[idx],'Players tested':int(pool[metric].notna().sum())})
+                rows.append({'Player':row.display_name,'Draft year':int(row.draft_year),'Draft round':'Undrafted' if pd.isna(row.draft_round) else int(row.draft_round),'Overall pick':'Undrafted' if pd.isna(row.draft_overall_pick) else int(row.draft_overall_pick),'Measurement':LABELS.get(metric,metric),'Position percentile':ranks.loc[idx],'Players tested':int(pool[metric].notna().sum())})
         st.subheader('Position percentiles')
         st.dataframe(pd.DataFrame(rows).round(1),hide_index=True,use_container_width=True)
         st.caption('Percentiles use recorded tests in the selected position and classes. Higher means a larger measurement; for timed drills, higher means faster. Size percentiles do not imply better performance. Ties use average ranks.')
+    elif mode=='Percentiles vs. draft pick':
+        st.subheader('Percentiles and draft investment')
+        basis=st.radio('Percentile source',['Combine measurements','Rookie NFL performance'],horizontal=True)
+        if basis=='Combine measurements':
+            metric=st.selectbox('Measurement to rank',TESTS,format_func=lambda n:LABELS.get(n,n))
+            label=LABELS.get(metric,metric);low=metric in LOWER;reference=pool.copy()
+        else:
+            metric=st.selectbox('Performance to rank',list(OUTCOMES),format_func=lambda n:OUTCOMES[n][0])
+            minimum=st.number_input('Minimum recorded observations',min_value=1,max_value=2000,value=20 if metric in {'separation','yac','getoff'} else 1)
+            label=OUTCOMES[metric][0];low=metric=='getoff'
+            reference=pool[pool[metric+'_n'].ge(minimum)].copy()
+        reference['Position percentile']=reference[metric].rank(pct=True,ascending=not low)*100
+        all_selected=st.checkbox('Select all players',value=True,key='draft_all_players')
+        chosen=ids if all_selected else st.multiselect('Players to display',ids,format_func=lambda n:names[n])
+        display=pool[pool.nfl_id.isin(chosen)].copy()
+        rank_lookup=reference.set_index('nfl_id')['Position percentile']
+        display['Position percentile']=display.nfl_id.map(rank_lookup)
+        c1,c2,c3=st.columns(3);c1.metric('Players with percentile',int(display['Position percentile'].notna().sum()));c2.metric('Players in reference group',int(reference[metric].notna().sum()));c3.metric('Undrafted players selected',int(display.draft_overall_pick.isna().sum()))
+        points=display.dropna(subset=['Position percentile','draft_overall_pick'])
+        if not points.empty:
+            fig,ax=plt.subplots(figsize=(10,5));ax.scatter(points.draft_overall_pick,points['Position percentile'],color='#147d92',alpha=.75)
+            ax.set(xlabel='Overall draft pick (smaller number = earlier selection)',ylabel=f'Position percentile: {label}',ylim=(0,102))
+            ax.spines[['top','right']].set_visible(False);fig.tight_layout();st.pyplot(fig);plt.close(fig)
+        else:st.info('Select drafted players with a recorded percentile to display the chart.')
+        st.caption('Upper right: high percentile with a later draft selection. Lower left: lower percentile with an earlier selection. These are research leads, not proof of draft value. Undrafted players appear in the table but have no pick number on the chart.')
+        cols=['display_name','draft_year','draft_round','draft_overall_pick',metric,'Position percentile']
+        if basis=='Rookie NFL performance':cols.append(metric+'_n')
+        view=display[cols].copy()
+        for col in ['draft_round','draft_overall_pick']:
+            view[col]=view[col].map(lambda x:'Undrafted' if pd.isna(x) else str(int(x)))
+        view=view.rename(columns={metric:label,metric+'_n':'Recorded observations'})
+        st.dataframe(friendly(view).round(1),hide_index=True,use_container_width=True)
+        st.caption('Percentiles use the full selected position and draft-class group, not just the displayed players. Missing tests and insufficient NFL observations have no percentile. Ties receive average ranks. Higher percentile means faster timed testing or a larger other measurement; for NFL get-off time, faster ranks higher. Size and separation percentiles are descriptive, not overall talent grades. Reference groups include only supplied prospects, not the entire historical NFL.')
+        st.caption('Draft pick is shown as its actual overall number, not a draft percentile: draft class sizes differ and the supplied prospect sample is incomplete. Rookie yardage and participation percentiles reflect opportunity as well as performance.')
     elif mode=='Combine vs. performance':
         col1,col2=st.columns(2)
         metric=col1.selectbox('Combine measurement',TESTS,format_func=lambda n:LABELS.get(n,n))
