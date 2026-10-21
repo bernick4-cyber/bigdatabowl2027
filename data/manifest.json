@@ -33,5 +33,47 @@
       "game_tracking_2023.csv.gz.part003"
     ],
     "original_bytes": 335463637
+  },
+  "games.csv": {
+    "parts": [
+      "games.csv.gz.part000"
+    ],
+    "original_bytes": 43174
+  },
+  "player_career_successes.csv": {
+    "parts": [
+      "player_career_successes.csv.gz.part000"
+    ],
+    "original_bytes": 13801
+  },
+  "game_tracking_2024.csv": {
+    "parts": [
+      "game_tracking_2024.csv.gz.part000",
+      "game_tracking_2024.csv.gz.part001",
+      "game_tracking_2024.csv.gz.part002",
+      "game_tracking_2024.csv.gz.part003",
+      "game_tracking_2024.csv.gz.part004",
+      "game_tracking_2024.csv.gz.part005",
+      "game_tracking_2024.csv.gz.part006",
+      "game_tracking_2024.csv.gz.part007"
+    ],
+    "original_bytes": 717952893
+  },
+  "game_tracking_2025.csv": {
+    "parts": [
+      "game_tracking_2025.csv.gz.part000",
+      "game_tracking_2025.csv.gz.part001",
+      "game_tracking_2025.csv.gz.part002",
+      "game_tracking_2025.csv.gz.part003",
+      "game_tracking_2025.csv.gz.part004",
+      "game_tracking_2025.csv.gz.part005",
+      "game_tracking_2025.csv.gz.part006",
+      "game_tracking_2025.csv.gz.part007",
+      "game_tracking_2025.csv.gz.part008",
+      "game_tracking_2025.csv.gz.part009",
+      "game_tracking_2025.csv.gz.part010",
+      "game_tracking_2025.csv.gz.part011"
+    ],
+    "original_bytes": 1022575093
   }
 }
