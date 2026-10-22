@@ -7,6 +7,8 @@ from data_access import read_data, manifest
 from presentation import LABELS, friendly
 
 TESTS=['forty','ten_yd_split','vertical','broad_jump','three_cone','short_shuttle','bench_reps','combine_height','combine_weight','arm_length','hand_size','wing_span']
+NGS_SCORES=['ngs_athleticism_score','ngs_college_production_score','ngs_final_score']
+TESTS=TESTS+NGS_SCORES
 LOWER={'forty','ten_yd_split','three_cone','short_shuttle'}
 OUTCOMES={
  'separation':('Average separation when thrown (yards)','separation_at_pass_forward','mean'),
@@ -18,6 +20,17 @@ OUTCOMES={
  'games':('Games with recorded plays',None,None),
  'plays':('Recorded player-play appearances',None,None),
 }
+
+def score_guide():
+    with st.expander('Understanding the Next Gen Stats scores'):
+        st.markdown('''- **Athleticism score:** supplied NGS summary of athletic testing. It can overlap with the individual tests used as model inputs.
+- **College production score:** supplied NGS summary of college performance. Its full model is not disclosed in the supplied documentation.
+- **Overall prospect score:** supplied NGS overall prospect assessment combining information including athleticism and college production. It can overlap with the component scores.
+
+**Combine IQ is a dashboard, not another score.** A score of 80 is not an 80% chance of NFL success. Percentiles in this app are calculated within your selected prospect sample and are distinct from the original NGS scores.
+
+Use the scores as existing benchmarks, then test whether additional measurements reduce held-out prediction error on the same players. Correlations between a composite score and its inputs are not independent evidence of NFL value. Avoid treating the overall score and its components as independent measurements. The supplied score snapshot's timing and model training cohorts have not been verified, so score-based retrospective comparisons remain exploratory.''')
+
 
 def assemble(players,combine,plays,games):
     p=players.merge(combine.drop(columns='draft_year',errors='ignore'),on='nfl_id',how='left',validate='one_to_one')
@@ -102,6 +115,7 @@ def strongest_view(data):
 def show():
     st.title('Research Lab')
     st.write('Compare athletic profiles and explore how combine testing relates to rookie NFL performance.')
+    score_guide()
     with st.expander('Start here: linear and rank correlations explained'):
         st.markdown('''**Linear correlation** asks whether two measurements follow a straight-line pattern. It uses the actual numeric gaps, so extreme players can have a large effect.
 
@@ -149,8 +163,8 @@ A correlation of −0.71 does **not** mean a 71% success rate or 71% of NFL succ
         st.caption('Percentiles use recorded tests in the selected position and classes. Higher means a larger measurement; for timed drills, higher means faster. Size percentiles do not imply better performance. Ties use average ranks.')
     elif mode=='Percentiles vs. draft pick':
         st.subheader('Percentiles and draft investment')
-        basis=st.radio('Percentile source',['Combine measurements','Rookie NFL performance'],horizontal=True)
-        if basis=='Combine measurements':
+        basis=st.radio('Percentile source',['Combine measurements and NGS scores','Rookie NFL performance'],horizontal=True)
+        if basis=='Combine measurements and NGS scores':
             metric=st.selectbox('Measurement to rank',TESTS,format_func=lambda n:LABELS.get(n,n))
             label=LABELS.get(metric,metric);low=metric in LOWER;reference=pool.copy()
         else:

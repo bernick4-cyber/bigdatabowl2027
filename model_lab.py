@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
-from research_lab import load, TESTS, OUTCOMES
+from research_lab import load, TESTS, OUTCOMES, score_guide
 from presentation import LABELS, friendly
 
 
@@ -43,9 +43,14 @@ def show():
     pool=data[data.nfl_position.eq(pos)&data.draft_year.isin(years)]
     outcome=st.selectbox('NFL outcome to study',list(OUTCOMES),index=list(OUTCOMES).index('getoff'),format_func=lambda n:OUTCOMES[n][0])
     minimum=int(st.number_input('Minimum recorded outcome observations per player',min_value=1,max_value=2000,value=20 if outcome in {'getoff','separation','yac'} else 1))
-    baseline=st.multiselect('Baseline variables',TESTS,default=['combine_weight'],format_func=lambda n:LABELS.get(n,n))
+    score_guide()
+    preset=st.selectbox('Baseline starting point',['Choose my own variables','NGS athleticism + college production','NGS overall prospect score'])
+    defaults={'Choose my own variables':['combine_weight'],'NGS athleticism + college production':['ngs_athleticism_score','ngs_college_production_score'],'NGS overall prospect score':['ngs_final_score']}
+    baseline=st.multiselect('Baseline variables',TESTS,default=defaults[preset],format_func=lambda n:LABELS.get(n,n),key='baseline_'+preset)
     additions=st.multiselect('Additional variables to test',[n for n in TESTS if n not in baseline],default=['vertical'] if 'vertical' not in baseline else [],format_func=lambda n:LABELS.get(n,n))
     variables=baseline+additions
+    if 'ngs_final_score' in variables and any(v in variables for v in ['ngs_athleticism_score','ngs_college_production_score']):
+        st.info('Overall prospect score overlaps with its components. For a clearer baseline, compare the overall score alone or athleticism plus college production first.')
     if not variables:st.info('Choose at least one measurement.');return
     eligible=pool[pool[outcome+'_n'].ge(minimum)&pool[outcome].notna()]
     d=eligible.dropna(subset=variables).copy()
