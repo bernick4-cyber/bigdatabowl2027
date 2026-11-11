@@ -16,7 +16,17 @@ rookie get-off beyond the supplied NGS athleticism score.
 - CSV downloads for eligible players and evaluated predictions.
 
 Default comparison adds the 10-yard split to athleticism and position group.
-Get-off is averaged over supplied rookie regular-season, non-nullified plays.
+Get-off defaults to identified dropbacks in supplied rookie regular-season,
+non-nullified plays: pass_result C, I, IN or S, plus R only when the description
+explicitly contains scramble. Missing/unknown codes and other R plays are excluded.
+This is a pass-rush opportunity proxy, not a verified individual rush assignment.
+The official 2027 dictionary was not readable during this update. Do not use the
+blitzing field as a rush-assignment label without confirming its meaning.
+The all-recorded-play sample remains selectable for reference. An audit table
+shows both observation counts, means and threshold eligibility for every player.
+Players are excluded from a selected analysis by the same minimum-observation
+rule, never by prediction error. Fewer than five complete test-class players
+blocks evaluation. Exports include play sample, inputs and observation threshold.
 Sacks are descriptive recorded totals, not opportunity-adjusted sack rates.
 Faster get-off alone does not establish better defensive play. Position labels
 are roster labels, not play alignment. Small samples and role/context differences

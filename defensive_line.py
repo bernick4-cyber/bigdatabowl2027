@@ -3,21 +3,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import streamlit as st
-from defensive_line_data import FEATURES, load_defensive_line, evaluate_holdout
+from defensive_line_data import FEATURES, DROPBACK_SCOPE, ALL_SCOPE, load_defensive_line, evaluate_holdout
 from presentation import LABELS, friendly
 
 
-@st.cache_data(max_entries=1, show_spinner=False)
-def load():
-    return load_defensive_line()
+@st.cache_data(max_entries=2, show_spinner=False)
+def load(scope):
+    return load_defensive_line(scope)
 
 
 def show():
     st.title('Defensive Line Lab')
     st.write('Do combine measurements add information about rookie NFL get-off beyond the supplied athleticism score?')
     st.caption('DE, DT and NT only. Edge uses the roster DE label; OLB prospects are excluded. Position labels do not identify every player’s actual alignment.')
+    scope = st.radio('Play sample', [DROPBACK_SCOPE, ALL_SCOPE])
+    st.caption('Dropback rule: pass_result C, I, IN or S; R only when the description explicitly says scramble. Missing/unknown results and other R plays are excluded. This identifies passing situations, not confirmed individual rush assignments. The unverified blitzing field is not used.')
     with st.spinner('Preparing defensive-line rookie observations…'):
-        data = load()
+        data = load(scope)
     a, b = st.columns(2)
     group = a.selectbox('Defensive-line group', ['All defensive linemen', 'Edge (DE)', 'Interior (DT / NT)'])
     minimum = int(b.number_input('Minimum rookie get-off observations', min_value=1, max_value=2000, value=20))
@@ -30,6 +32,12 @@ def show():
     st.info('Lower get-off time means a faster recorded start. It does not measure overall defensive quality. Rookie regular-season player averages are weighted equally; play volume and game context can affect comparisons.')
     coverage, comparisons, relationships, models = st.tabs(['Data coverage', 'Player comparisons', 'Combine relationships', 'Draft-class test'])
     with coverage:
+        st.subheader('Effect of the play filter')
+        audit = pool[['display_name', 'nfl_position', 'draft_year', 'all_getoff', 'all_getoff_n', 'dropback_getoff', 'dropback_getoff_n', 'excluded_context_getoff_n']].copy()
+        audit['Meets all-play threshold'] = audit.all_getoff_n.ge(minimum)
+        audit['Meets dropback threshold'] = audit.dropback_getoff_n.ge(minimum)
+        st.dataframe(friendly(audit).round(4), hide_index=True, use_container_width=True)
+        st.caption('Excluded context does not necessarily mean a running play. Missing/unknown context stays excluded. Both thresholds apply equally to every player; missing get-off values are never counted.')
         counts = pool.groupby(['draft_year', 'line_group']).size().rename('Prospects').to_frame()
         counts = counts.join(eligible.groupby(['draft_year', 'line_group']).size().rename('Meet threshold')).fillna(0).astype(int)
         st.dataframe(counts.reset_index(), hide_index=True, use_container_width=True)
@@ -37,7 +45,7 @@ def show():
         st.dataframe(pd.DataFrame({'Measurement': [LABELS[n] for n in measurements],
                      'Recorded among eligible players': [eligible[n].notna().sum() for n in measurements],
                      'Missing among eligible players': [eligible[n].isna().sum() for n in measurements]}), hide_index=True, use_container_width=True)
-        st.caption('Missing NFL outcomes stay missing. Sacks shown elsewhere are recorded totals, not sack rates; no pass-rush opportunity denominator has been inferred.')
+        st.caption('Missing NFL outcomes stay missing. Sack totals and observation counts refer to the selected play sample. They are not sack rates.')
     with comparisons:
         if eligible.empty:
             st.info('No players meet this observation threshold.')
