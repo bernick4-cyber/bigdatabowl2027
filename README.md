@@ -1,22 +1,56 @@
-# NFL Combine Slant Explorer — bundled data
+# NFL Prospect Lab — Big Data Bowl 2027
 
-## Deploy
-1. Extract this ZIP.
-2. Upload app.py, nfl_slant_starter.py, requirements.txt, README.md, the complete data folder, and .streamlit/config.toml to your GitHub repository. Keep the data folder structure intact.
-3. In Streamlit Community Cloud select the repository, branch, and app.py, then deploy.
-4. Data loads automatically; nobody needs to upload CSVs in the app.
+Streamlit workspace for combine measurements and NFL outcomes. The default
+Defensive Line Lab studies whether combine measurements add information about
+rookie get-off beyond the supplied NGS athleticism score.
 
-Keep the repository and app access limited to your authorized competition team and follow Kaggle competition sharing terms. Source data is included in this package.
+## Defensive Line Lab
 
-## Included datasets
-players.csv, combine_results.csv, combine_tracking.csv, player_play.csv, and game_tracking_2023.csv.
-The explorer currently uses players and combine tracking only. Other bundled datasets are available for future analysis. games.csv, player_career_successes.csv, and game_tracking_2024/2025.csv were not supplied and are not included.
+- DE, DT and NT prospects; OLB excluded. Edge = DE; interior = DT or NT.
+- Coverage by draft class and group, including missing measurements.
+- Player comparisons with get-off observations, recorded sacks and measurements.
+- Linear and rank correlations with position-colored scatterplots.
+- Train on 2023–2024, evaluate on 2025. Preprocessing uses training players only.
+- All compared models use the same complete-player sample, with equal player
+  weights and no imputation. Position group is included when both occur.
+- CSV downloads for eligible players and evaluated predictions.
 
-Data files are gzip compressed and split into chunks under 20 MB for repository uploads. Do not extract, rename, or open individual parts; the app reassembles them. The complete data folder must be committed. Large browser uploads can take time; upload the data folder in batches if necessary.
+Default comparison adds the 10-yard split to athleticism and position group.
+Get-off is averaged over supplied rookie regular-season, non-nullified plays.
+Sacks are descriptive recorded totals, not opportunity-adjusted sack rates.
+Faster get-off alone does not establish better defensive play. Position labels
+are roster labels, not play alignment. Small samples and role/context differences
+limit interpretation. Inspecting 2025 outcomes and trying specifications makes
+that evaluation exploratory. NGS score timing and training cohorts are unverified.
 
-## Local use
+## Other pages
+
+Research Lab, College pathways, Model Lab, NFL Success, Combine slants,
+Player profiles, NFL game tracking and Data coverage remain available.
+
+## Included data
+
+The manifest includes nine datasets: players, combine results, combine tracking,
+player-play data, games, career successes and NFL tracking for 2023, 2024 and 2025.
+There are 510 prospects across the 2023–2025 draft classes. Files are gzip
+compressed and some are split into parts. Keep the complete data folder and
+manifest intact; do not extract or rename the individual parts.
+
+## Run
+
+```bash
 python -m pip install -r requirements.txt
 python -m streamlit run app.py
+```
 
-## Limitations
-Candidate turn detection uses peak smoothed heading-change rate while moving >=3 yd/s with 0.3 seconds of tracking on each side. Entry/exit speeds average adjacent 0.3-second windows. Markers require visual validation. This is exploratory; there is no fitted NFL prediction model. Hosted memory requirements and the Streamlit UI have not been tested here. The loader currently reads only the two datasets required by the explorer.
+For Streamlit Community Cloud use app.py as the entry point. The defensive-line
+update adds no dependencies. Optional Streamlit configuration belongs at
+.streamlit/config.toml.
+
+## Validate
+
+```bash
+python -m unittest test_defensive_line.py
+```
+
+Keep competition data access and sharing within the applicable competition terms.

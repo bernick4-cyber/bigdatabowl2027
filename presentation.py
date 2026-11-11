@@ -4,6 +4,10 @@ import streamlit as st
 
 HIDDEN = {'nfl_id','event_id','game_id','game_key','play_id','method'}
 LABELS = {
+'getoff':'Mean rookie get-off (seconds)','getoff_n':'Recorded get-off observations',
+'recorded_sacks':'Recorded rookie sacks','sack_n':'Recorded sack observations',
+'recorded_plays':'Recorded rookie player-play appearances','recorded_games':'Recorded rookie games',
+'line_group':'Defensive-line group',
 'display_name':'Player','nfl_position':'Position','combine_position':'Testing position',
 'draft_year':'Draft year','birth_date':'Date of birth','college_name':'College','college_conference':'Conference',
 'draft_round':'Draft round','draft_pick_within_round':'Pick in round','draft_overall_pick':'Overall pick',
